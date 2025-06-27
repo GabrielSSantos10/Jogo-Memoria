@@ -3,6 +3,6 @@ module com.example.jogo_memoria {
     requires javafx.fxml;
 
 
-    opens com.example.jogo_memoria to javafx.fxml;
-    exports com.example.jogo_memoria;
+    opens jogo_memoria to javafx.fxml;
+    exports jogo_memoria;
 }
