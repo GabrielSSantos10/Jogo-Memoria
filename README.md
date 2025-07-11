@@ -1,7 +1,5 @@
 ☕ Jogo da Memória com Arquitetura MVC em JavaFX
 
-![image](https://github.com/user-attachments/assets/9a0965f6-0ff1-4739-82d5-53bd78c4ea36)
-
 📝 Sobre o Projeto
 Este projeto é um clássico Jogo da Memória com tema de flores, desenvolvido como uma aplicação de desktop utilizando Java e a biblioteca JavaFX. O principal objetivo do projeto foi aplicar e demonstrar conceitos avançados de engenharia de software, como a arquitetura MVC (Model-View-Controller), tratamento de exceções personalizado e boas práticas de organização de código.
 
