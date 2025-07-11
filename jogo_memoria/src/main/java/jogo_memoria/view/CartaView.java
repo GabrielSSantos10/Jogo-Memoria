@@ -30,9 +30,11 @@ public class CartaView extends Button{
 
     public void virarParaCima() {
         setGraphic(this.imagemVisivel);
+        modeloCarta.setVirada(true);
     }
 
     public void virarParaBaixo() {
         setGraphic(null);
+        modeloCarta.setVirada(false);
     }
 }

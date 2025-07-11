@@ -1,4 +1,4 @@
-module com.example.jogo_memoria {
+module jogo_memoria {
     requires javafx.controls;
     requires javafx.fxml;
 

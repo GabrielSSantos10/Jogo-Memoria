@@ -35,23 +35,26 @@ public class JogoController {
         }
     }
 
-    public void iniciarJogo(String nomeJogador) {
-        modeloJogo.setNomeJogadorAtual(nomeJogador);
-        iniciarLogicaJogo();
+    public void iniciarJogo(String nomeJogador1, String nomeJogador2) {
+        iniciarLogicaJogo(nomeJogador1, nomeJogador2);
     }
 
     public void jogarNovamente() {
-        iniciarLogicaJogo();
+        iniciarLogicaJogo(modeloJogo.getNomeJogador1(), modeloJogo.getNomeJogador2());
     }
 
     public void voltarAoMenu() {
         mostrarMenuPrincipal();
     }
 
-    private void iniciarLogicaJogo() {
+    private void iniciarLogicaJogo(String nomeJogador1, String nomeJogador2) {
         try {
-            modeloJogo.iniciarNovoJogo();
+            modeloJogo.iniciarNovoJogo(nomeJogador1, nomeJogador2);
             visao.mostrarTelaJogo(modeloJogo.getCartas());
+            visao.atualizarJogadorAtual(modeloJogo.getNomeJogadorAtual());
+            visao.atualizarPontuacaoJogador(modeloJogo.getNomeJogador1(), modeloJogo.getPontuacaoJogador1(), 1);
+            visao.atualizarPontuacaoJogador(modeloJogo.getNomeJogador2(), modeloJogo.getPontuacaoJogador2(), 2);
+            // O cronômetro não será mais usado para pontuação, mas pode ser mantido para tempo de jogo total
             iniciarCronometro();
             primeiraCarta = null;
             segundaCarta = null;
@@ -66,14 +69,14 @@ public class JogoController {
             long segundosPassados = (System.currentTimeMillis() - tempoInicial) / 1000;
             long minutos = segundosPassados / 60;
             long segundos = segundosPassados % 60;
-            visao.atualizarCronometro(String.format("%02d:%02d", minutos, segundos));
+//             visao.atualizarCronometro(String.format("%02d:%02d", minutos, segundos));
         }));
         cronometro.setCycleCount(Timeline.INDEFINITE);
         cronometro.play();
     }
 
     public void lidarComCliqueNaCarta(CartaView visaoCarta) {
-        if (visaoCarta.isDisabled() || segundaCarta != null) return;
+        if (visaoCarta.isDisabled() || visaoCarta.getModeloCarta().isVirada() || segundaCarta != null) return;
 
         visaoCarta.virarParaCima();
 
@@ -95,6 +98,9 @@ public class JogoController {
             primeiraCarta.setDisable(true);
             segundaCarta.setDisable(true);
             modeloJogo.incrementarParesEncontrados();
+            modeloJogo.incrementarPontuacaoJogadorAtual();
+            visao.atualizarPontuacaoJogador(modeloJogo.getNomeJogador1(), modeloJogo.getPontuacaoJogador1(), 1);
+            visao.atualizarPontuacaoJogador(modeloJogo.getNomeJogador2(), modeloJogo.getPontuacaoJogador2(), 2);
             limparSelecao();
             if (modeloJogo.getParesEncontrados() == modeloJogo.getTotalPares()) {
                 lidarComVitoria();
@@ -105,6 +111,8 @@ public class JogoController {
                 primeiraCarta.virarParaBaixo();
                 segundaCarta.virarParaBaixo();
                 limparSelecao();
+                modeloJogo.proximoJogador();
+                visao.atualizarJogadorAtual(modeloJogo.getNomeJogadorAtual());
             });
             pausa.play();
         }
@@ -116,32 +124,53 @@ public class JogoController {
     }
 
     private void lidarComVitoria() {
-        cronometro.stop();
-        long segundosPassados = (System.currentTimeMillis() - tempoInicial) / 1000;
+        cronometro.stop(); // O cronômetro ainda pode ser usado para tempo total de jogo, mas não para pontuação
 
-        int pontos = calcularPontos(segundosPassados);
-        String tempoFormatado = formatarTempo(segundosPassados);
+        String nomeJogador1 = modeloJogo.getNomeJogador1();
+        String nomeJogador2 = modeloJogo.getNomeJogador2();
+        int pontosJogador1 = modeloJogo.getPontuacaoJogador1();
+        int pontosJogador2 = modeloJogo.getPontuacaoJogador2();
 
-        RegistroPontuacaoModel novoRegistro = new RegistroPontuacaoModel(modeloJogo.getNomeJogadorAtual(), pontos, tempoFormatado);
+        String nomeVencedor;
+        int pontosVencedor;
+        String nomePerdedor;
+        int pontosPerdedor;
+
+        boolean isEmpate = false;
+
+        if (pontosJogador1 > pontosJogador2) {
+            nomeVencedor = nomeJogador1;
+            pontosVencedor = pontosJogador1;
+            nomePerdedor = nomeJogador2;
+            pontosPerdedor = pontosJogador2;
+        } else if (pontosJogador2 > pontosJogador1) {
+            nomeVencedor = nomeJogador2;
+            pontosVencedor = pontosJogador2;
+            nomePerdedor = nomeJogador1;
+            pontosPerdedor = pontosJogador1;
+        } else {
+            // Empate - pode-se decidir um critério de desempate ou declarar empate
+            nomeVencedor = nomeJogador1 + " e " + nomeJogador2;
+            pontosVencedor = pontosJogador1;
+            nomePerdedor = "Empate";
+            pontosPerdedor = 0;
+            isEmpate = true;
+        }
+
+        // O placar de melhores pontuações pode ser atualizado com o vencedor, se desejado
+        RegistroPontuacaoModel novoRegistro = new RegistroPontuacaoModel(nomeVencedor, pontosVencedor);
         modeloPlacar.adicionarPontuacao(novoRegistro);
 
         try {
-            visao.mostrarTelaVitoria(modeloJogo.getNomeJogadorAtual(), pontos, tempoFormatado);
+            if (isEmpate){
+                visao.mostrarTelaEmpate(nomeVencedor, pontosVencedor);
+            }
+            else {
+                visao.mostrarTelaVitoria(nomeVencedor, pontosVencedor, nomePerdedor, pontosPerdedor);
+            }
         } catch (RecursoNaoEncontradoException e) {
             mostrarErroFatal(e);
         }
-    }
-
-    private int calcularPontos(long segundosGastos) {
-        // Base: 5 minutos (300s) = 100 pontos.
-        double pontuacao = (300.0 / Math.max(1, segundosGastos)) * 100.0;
-        return (int) Math.round(pontuacao);
-    }
-
-    private String formatarTempo(long totalSegundos) {
-        long minutos = totalSegundos / 60;
-        long segundos = totalSegundos % 60;
-        return String.format("%02d:%02d", minutos, segundos);
     }
 
     private void mostrarErroFatal(Exception e) {

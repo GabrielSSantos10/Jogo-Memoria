@@ -20,7 +20,9 @@ import java.util.List;
 public class JogoView {
     private final Stage palcoPrincipal;
     private JogoController controle;
-    private final Label cronometroLabel = new Label("00:00");
+    private final Label jogadorAtualLabel = new Label("");
+    private final Label pontuacaoJogador1Label = new Label("Jogador 1: 0 pontos");
+    private final Label pontuacaoJogador2Label = new Label("Jogador 2: 0 pontos");
 
     public JogoView(Stage palcoPrincipal) {
         this.palcoPrincipal = palcoPrincipal;
@@ -48,27 +50,34 @@ public class JogoView {
         } else {
             for (int i = 0; i < melhoresPontuacoes.size(); i++) {
                 RegistroPontuacaoModel registro = melhoresPontuacoes.get(i);
-                Label placarLabel = new Label(String.format("#%d %s - %d pts (%s)",
-                        i + 1, registro.nomeJogador(), registro.pontos(), registro.tempoFormatado()));
+                Label placarLabel = new Label(String.format("#%d %s - %d pts",
+                        i + 1, registro.getNomeJogador(), registro.getPontos()));
                 placarLabel.getStyleClass().add("highscore-entry");
                 placarBox.getChildren().add(placarLabel);
             }
         }
 
-        Label nomeLabel = new Label("Digite seu nome:");
-        nomeLabel.getStyleClass().add("name-label");
-        TextField campoNome = new TextField();
-        campoNome.setPromptText("Jogador");
-        campoNome.setMaxWidth(200);
+        Label nomeLabel1 = new Label("Nome do Jogador 1:");
+        nomeLabel1.getStyleClass().add("name-label");
+        TextField campoNome1 = new TextField();
+        campoNome1.setPromptText("Jogador 1");
+        campoNome1.setMaxWidth(200);
+
+        Label nomeLabel2 = new Label("Nome do Jogador 2:");
+        nomeLabel2.getStyleClass().add("name-label");
+        TextField campoNome2 = new TextField();
+        campoNome2.setPromptText("Jogador 2");
+        campoNome2.setMaxWidth(200);
 
         Button botaoIniciar = new Button("Iniciar Jogo");
         botaoIniciar.getStyleClass().add("start-button");
         botaoIniciar.setDisable(true);
-        botaoIniciar.setOnAction(e -> controle.iniciarJogo(campoNome.getText()));
+        botaoIniciar.setOnAction(e -> controle.iniciarJogo(campoNome1.getText(), campoNome2.getText()));
 
-        campoNome.textProperty().addListener((obs, oldText, newText) -> botaoIniciar.setDisable(newText.trim().isEmpty()));
+        campoNome1.textProperty().addListener((obs, oldText, newText) -> botaoIniciar.setDisable(newText.trim().isEmpty() || campoNome2.getText().trim().isEmpty()));
+        campoNome2.textProperty().addListener((obs, oldText, newText) -> botaoIniciar.setDisable(newText.trim().isEmpty() || campoNome1.getText().trim().isEmpty()));
 
-        layoutMenu.getChildren().addAll(titulo, placarBox, nomeLabel, campoNome, botaoIniciar);
+        layoutMenu.getChildren().addAll(titulo, placarBox, nomeLabel1, campoNome1, nomeLabel2, campoNome2, botaoIniciar);
         Scene cena = new Scene(layoutMenu, 520, 600);
         aplicarEstilo(cena);
         palcoPrincipal.setScene(cena);
@@ -84,8 +93,14 @@ public class JogoView {
             gridCartas.add(visaoCarta, i % 4, i / 4);
         }
 
-        cronometroLabel.getStyleClass().add("timer-label");
-        VBox barraTopo = new VBox(cronometroLabel);
+        Label jogadorAtualLabel = this.jogadorAtualLabel;
+        jogadorAtualLabel.getStyleClass().add("player-turn-label");
+        Label pontuacaoJogador1Label = this.pontuacaoJogador1Label;
+        pontuacaoJogador1Label.getStyleClass().add("score-label");
+        Label pontuacaoJogador2Label = this.pontuacaoJogador2Label;
+        pontuacaoJogador2Label.getStyleClass().add("score-label");
+
+        VBox barraTopo = new VBox(jogadorAtualLabel, pontuacaoJogador1Label, pontuacaoJogador2Label);
         barraTopo.getStyleClass().add("top-bar");
 
         BorderPane layoutJogo = new BorderPane();
@@ -97,19 +112,19 @@ public class JogoView {
         palcoPrincipal.setScene(cena);
     }
 
-    public void mostrarTelaVitoria(String nomeJogador, int pontos, String tempo) throws RecursoNaoEncontradoException {
+    public void mostrarTelaVitoria(String nomeJogadorVencedor, int pontosVencedor, String nomeJogadorPerdedor, int pontosPerdedor) throws RecursoNaoEncontradoException {
         VBox layoutVitoria = new VBox();
         layoutVitoria.getStyleClass().add("menu-vbox");
 
-        Label titulo = new Label("Parabéns, " + nomeJogador + "!");
+        Label titulo = new Label("Fim de Jogo!");
         titulo.getStyleClass().add("game-title");
         titulo.setStyle("-fx-font-size: 32px;");
 
-        Label infoPontos = new Label(String.format("Você fez %d pontos!", pontos));
-        infoPontos.setStyle("-fx-font-size: 24px; -fx-text-fill: #004d40;");
+        Label infoVencedor = new Label(String.format("Vencedor: %s com %d pontos!", nomeJogadorVencedor, pontosVencedor));
+        infoVencedor.setStyle("-fx-font-size: 24px; -fx-text-fill: #004d40;");
 
-        Label infoTempo = new Label("Seu tempo: " + tempo);
-        infoTempo.setStyle("-fx-font-size: 20px;");
+        Label infoPerdedor = new Label(String.format("Perdedor: %s com %d pontos!", nomeJogadorPerdedor, pontosPerdedor));
+        infoPerdedor.setStyle("-fx-font-size: 20px;");
 
         Button botaoJogarNovamente = new Button("Jogar Novamente");
         botaoJogarNovamente.getStyleClass().add("start-button");
@@ -120,14 +135,48 @@ public class JogoView {
         botaoMenu.setStyle("-fx-background-color: #6c757d;");
         botaoMenu.setOnAction(e -> controle.voltarAoMenu());
 
-        layoutVitoria.getChildren().addAll(titulo, infoPontos, infoTempo, botaoJogarNovamente, botaoMenu);
+        layoutVitoria.getChildren().addAll(titulo, infoVencedor, infoPerdedor, botaoJogarNovamente, botaoMenu);
         Scene cena = new Scene(layoutVitoria, 520, 560);
         aplicarEstilo(cena);
         palcoPrincipal.setScene(cena);
     }
 
-    public void atualizarCronometro(String texto) {
-        cronometroLabel.setText(texto);
+    public void mostrarTelaEmpate(String nomeJogadorVencedor, int pontosVencedor) throws RecursoNaoEncontradoException {
+        VBox layoutVitoria = new VBox();
+        layoutVitoria.getStyleClass().add("menu-vbox");
+
+        Label titulo = new Label("Fim de Jogo!");
+        titulo.getStyleClass().add("game-title");
+        titulo.setStyle("-fx-font-size: 32px;");
+
+        Label infoVencedor = new Label(String.format("Empate: %s com %d pontos!", nomeJogadorVencedor, pontosVencedor));
+        infoVencedor.setStyle("-fx-font-size: 24px; -fx-text-fill: #004d40;");
+
+        Button botaoJogarNovamente = new Button("Jogar Novamente");
+        botaoJogarNovamente.getStyleClass().add("start-button");
+        botaoJogarNovamente.setOnAction(e -> controle.jogarNovamente());
+
+        Button botaoMenu = new Button("Voltar ao Menu");
+        botaoMenu.getStyleClass().add("start-button");
+        botaoMenu.setStyle("-fx-background-color: #6c757d;");
+        botaoMenu.setOnAction(e -> controle.voltarAoMenu());
+
+        layoutVitoria.getChildren().addAll(titulo, infoVencedor, botaoJogarNovamente, botaoMenu);
+        Scene cena = new Scene(layoutVitoria, 520, 560);
+        aplicarEstilo(cena);
+        palcoPrincipal.setScene(cena);
+    }
+
+    public void atualizarJogadorAtual(String nomeJogador) {
+        jogadorAtualLabel.setText("Turno de: " + nomeJogador);
+    }
+
+    public void atualizarPontuacaoJogador(String nomeJogador, int pontos, int jogadorNumero) {
+        if (jogadorNumero == 1) {
+            pontuacaoJogador1Label.setText(nomeJogador + ": " + pontos + " pontos");
+        } else if (jogadorNumero == 2) {
+            pontuacaoJogador2Label.setText(nomeJogador + ": " + pontos + " pontos");
+        }
     }
 
     private void aplicarEstilo(Scene cena) throws RecursoNaoEncontradoException {
