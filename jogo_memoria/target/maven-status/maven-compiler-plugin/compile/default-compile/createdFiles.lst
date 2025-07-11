@@ -1,3 +1,10 @@
-jogo_memoria\MemoryGame.class
+jogo_memoria\view\JogoView.class
+jogo_memoria\model\PlacarModel.class
+jogo_memoria\exception\RecursoNaoEncontradoException.class
+jogo_memoria\JogoMemoriaFloridoApp.class
+jogo_memoria\model\JogoModel.class
 module-info.class
-jogo_memoria\MemoryGame$Card.class
+jogo_memoria\controller\JogoController.class
+jogo_memoria\view\CartaView.class
+jogo_memoria\model\RegistroPontuacaoModel.class
+jogo_memoria\model\CartaModel.class
